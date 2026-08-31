@@ -7,19 +7,18 @@
     android:layout_height="match_parent"
     android:padding="16dp">
 
-
     <TextView
         android:id="@+id/txtTitulo"
         android:layout_width="wrap_content"
         android:layout_height="wrap_content"
         android:text="Control de Bodega"
-        android:textSize="22sp"
+        android:textSize="24sp"
         android:textStyle="bold"
-        android:textColor="#1B365D"
+        android:textColor="#2196F3"
+        android:layout_marginTop="32dp"
         app:layout_constraintTop_toTopOf="parent"
         app:layout_constraintStart_toStartOf="parent"
         app:layout_constraintEnd_toEndOf="parent" />
-
 
     <LinearLayout
         android:id="@+id/layoutFormulario"
@@ -34,9 +33,10 @@
         <TextView
             android:layout_width="wrap_content"
             android:layout_height="wrap_content"
-            android:text="Ingreso de Mercadería"
+            android:text="Movimiento de Mercadería"
             android:textStyle="bold"
-            android:textSize="16sp" />
+            android:textSize="18sp"
+            android:layout_marginBottom="8dp" />
 
         <EditText
             android:id="@+id/edtProducto"
@@ -52,22 +52,38 @@
             android:hint="Cantidad"
             android:inputType="number" />
 
-        <Button
-            android:id="@+id/btnRegistrar"
+        <LinearLayout
             android:layout_width="match_parent"
             android:layout_height="wrap_content"
-            android:text="Registrar en Bodega"
-            android:layout_marginTop="8dp" />
+            android:orientation="horizontal"
+            android:layout_marginTop="12dp">
+
+            <Button
+                android:id="@+id/btnIngresar"
+                android:layout_width="0dp"
+                android:layout_height="wrap_content"
+                android:layout_weight="1"
+                android:layout_marginEnd="4dp"
+                android:text="Ingresar (+)"
+                android:backgroundTint="#4CAF50" />
+
+            <Button
+                android:id="@+id/btnRetirar"
+                android:layout_width="0dp"
+                android:layout_height="wrap_content"
+                android:layout_weight="1"
+                android:layout_marginStart="4dp"
+                android:text="Retirar (-)"
+                android:backgroundTint="#E53935" />
+        </LinearLayout>
 
         <TextView
             android:id="@+id/txtMensaje"
             android:layout_width="wrap_content"
             android:layout_height="wrap_content"
-            android:textColor="#2E7D32"
             android:textStyle="italic"
-            android:layout_marginTop="6dp" />
+            android:layout_marginTop="8dp" />
     </LinearLayout>
-
 
     <TableLayout
         android:id="@+id/tableStock"
@@ -79,38 +95,21 @@
         app:layout_constraintStart_toStartOf="parent"
         app:layout_constraintEnd_toEndOf="parent">
 
-        <TableRow android:background="#DDDDDD" android:padding="6dp">
+        <TableRow android:background="#E0E0E0" android:padding="8dp">
             <TextView
                 android:text="Producto"
                 android:textStyle="bold"
+                android:textColor="#111111"
+                android:textSize="15sp"
                 android:gravity="center" />
             <TextView
                 android:text="Stock Actual"
                 android:textStyle="bold"
+                android:textColor="#111111"
+                android:textSize="15sp"
                 android:gravity="center" />
         </TableRow>
 
-        <TableRow android:padding="6dp">
-            <TextView
-                android:id="@+id/txtProd1"
-                android:text="Cajas de Tornillos"
-                android:gravity="center" />
-            <TextView
-                android:id="@+id/txtCant1"
-                android:text="50"
-                android:gravity="center" />
-        </TableRow>
-
-        <TableRow android:padding="6dp">
-            <TextView
-                android:id="@+id/txtProd2"
-                android:text="Cables de Red"
-                android:gravity="center" />
-            <TextView
-                android:id="@+id/txtCant2"
-                android:text="20"
-                android:gravity="center" />
-        </TableRow>
     </TableLayout>
 
 </androidx.constraintlayout.widget.ConstraintLayout>
