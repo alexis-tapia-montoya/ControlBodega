@@ -1,0 +1,73 @@
+<?xml version="1.0" encoding="utf-8"?>
+<LinearLayout
+    xmlns:android="http://schemas.android.com/apk/res/android"
+    android:layout_width="match_parent"
+    android:layout_height="match_parent"
+    android:orientation="vertical"
+    android:padding="24dp"
+    android:gravity="center">
+
+    <TextView
+        android:layout_width="wrap_content"
+        android:layout_height="wrap_content"
+        android:text="Acceso a Bodega"
+        android:textSize="24sp"
+        android:textStyle="bold"
+        android:textColor="#2196F3"
+        android:layout_marginBottom="24dp" />
+
+    <EditText
+        android:id="@+id/edtUsuario"
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content"
+        android:hint="Usuario"
+        android:inputType="text" />
+
+    <EditText
+        android:id="@+id/edtClave"
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content"
+        android:hint="Contraseña"
+        android:inputType="textPassword"
+        android:layout_marginTop="8dp" />
+
+    <Button
+        android:id="@+id/btnLogin"
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content"
+        android:text="Iniciar Sesión"
+        android:layout_marginTop="16dp" />
+
+    <!-- Sección exclusiva para Administrador -->
+    <TextView
+        android:layout_width="wrap_content"
+        android:layout_height="wrap_content"
+        android:text="Crear nuevo usuario (Solo Admin)"
+        android:textStyle="bold"
+        android:layout_marginTop="32dp"
+        android:textColor="#757575" />
+
+    <EditText
+        android:id="@+id/edtClaveAdmin"
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content"
+        android:hint="Clave de Administrador"
+        android:inputType="textPassword"
+        android:layout_marginTop="4dp" />
+
+    <Button
+        android:id="@+id/btnRegistrarUsuario"
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content"
+        android:text="Registrar Nuevo Operario"
+        android:backgroundTint="#607D8B"
+        android:layout_marginTop="8dp" />
+
+    <TextView
+        android:id="@+id/txtMensajeLogin"
+        android:layout_width="wrap_content"
+        android:layout_height="wrap_content"
+        android:layout_marginTop="12dp"
+        android:textStyle="italic" />
+
+</LinearLayout>
