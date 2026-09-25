@@ -12,7 +12,6 @@
         android:supportsRtl="true"
         android:theme="@style/Theme.ControlBodega">
 
-        <!-- LoginActivity configurada como la pantalla principal de arranque -->
         <activity
             android:name=".LoginActivity"
             android:exported="true"
@@ -23,7 +22,6 @@
             </intent-filter>
         </activity>
 
-        <!-- MainActivity se abre únicamente tras autenticarse -->
         <activity
             android:name=".MainActivity"
             android:exported="false"

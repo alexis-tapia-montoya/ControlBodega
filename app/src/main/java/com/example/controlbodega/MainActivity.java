@@ -10,6 +10,7 @@ import android.widget.EditText;
 import android.widget.TableLayout;
 import android.widget.TableRow;
 import android.widget.TextView;
+import android.widget.Toast;
 import java.util.LinkedHashMap;
 import java.util.Map;
 
@@ -23,6 +24,7 @@ public class MainActivity extends AppCompatActivity {
     private TableLayout tableStock;
 
     private final LinkedHashMap<String, Integer> inventario = new LinkedHashMap<>();
+    private TableRow filaSeleccionadaAnterior = null; // Para deseleccionar la fila previa
 
     @Override
     protected void onCreate(Bundle savedInstanceState) {
@@ -103,20 +105,49 @@ public class MainActivity extends AppCompatActivity {
         if (totalFilas > 1) {
             tableStock.removeViews(1, totalFilas - 1);
         }
+        filaSeleccionadaAnterior = null;
 
         for (Map.Entry<String, Integer> item : inventario.entrySet()) {
-            TableRow fila = new TableRow(this);
-            fila.setPadding(0, 10, 0, 10);
+            final String nombreProd = item.getKey();
+            final TableRow fila = new TableRow(this);
+            fila.setPadding(0, 14, 0, 14);
+            fila.setClickable(true);
+            fila.setFocusable(true);
 
             TextView colProducto = new TextView(this);
-            colProducto.setText(item.getKey());
-            colProducto.setTextSize(14);
+            colProducto.setText(nombreProd);
+            colProducto.setTextSize(15);
             colProducto.setGravity(Gravity.CENTER);
+            colProducto.setPadding(6, 6, 6, 6);
 
             TextView colCantidad = new TextView(this);
             colCantidad.setText(String.valueOf(item.getValue()));
-            colCantidad.setTextSize(14);
+            colCantidad.setTextSize(15);
             colCantidad.setGravity(Gravity.CENTER);
+            colCantidad.setPadding(6, 6, 6, 6);
+
+            View.OnClickListener clickListener = new View.OnClickListener() {
+                @Override
+                public void onClick(View v) {
+                    if (filaSeleccionadaAnterior != null) {
+                        filaSeleccionadaAnterior.setBackgroundColor(Color.TRANSPARENT);
+                    }
+
+                    fila.setBackgroundColor(Color.parseColor("#BBDEFB"));
+                    filaSeleccionadaAnterior = fila;
+
+                    edtProducto.setText(nombreProd);
+                    edtCantidad.requestFocus();
+
+                    Toast.makeText(MainActivity.this, "Seleccionado: " + nombreProd, Toast.LENGTH_SHORT).show();
+                    txtMensaje.setTextColor(Color.parseColor("#1976D2"));
+                    txtMensaje.setText("Producto seleccionado: " + nombreProd);
+                }
+            };
+
+            fila.setOnClickListener(clickListener);
+            colProducto.setOnClickListener(clickListener);
+            colCantidad.setOnClickListener(clickListener);
 
             fila.addView(colProducto);
             fila.addView(colCantidad);

@@ -38,7 +38,6 @@
         android:text="Iniciar Sesión"
         android:layout_marginTop="16dp" />
 
-    <!-- Sección exclusiva para Administrador -->
     <TextView
         android:layout_width="wrap_content"
         android:layout_height="wrap_content"
