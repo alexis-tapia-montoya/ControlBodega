@@ -1,6 +1,11 @@
 package com.example.controlbodega;
 
+import androidx.annotation.NonNull;
 import androidx.appcompat.app.AppCompatActivity;
+import androidx.biometric.BiometricManager;
+import androidx.biometric.BiometricPrompt;
+import androidx.core.content.ContextCompat;
+
 import android.content.ContentValues;
 import android.content.Intent;
 import android.database.Cursor;
@@ -11,14 +16,17 @@ import android.view.View;
 import android.widget.Button;
 import android.widget.EditText;
 import android.widget.TextView;
+import android.widget.Toast;
 
 import com.example.controlbodega.database.BodegaContract.UsuarioEntry;
 import com.example.controlbodega.database.BodegaDbHelper;
 
+import java.util.concurrent.Executor;
+
 public class LoginActivity extends AppCompatActivity {
 
     private EditText edtUsuario, edtClave, edtClaveAdmin;
-    private Button btnLogin, btnRegistrarUsuario;
+    private Button btnLogin, btnRegistrarUsuario, btnBiometrico;
     private TextView txtMensajeLogin;
 
     private static final String CLAVE_MAESTRA_ADMIN = "admin123";
@@ -36,6 +44,7 @@ public class LoginActivity extends AppCompatActivity {
         edtClaveAdmin = findViewById(R.id.edtClaveAdmin);
         btnLogin = findViewById(R.id.btnLogin);
         btnRegistrarUsuario = findViewById(R.id.btnRegistrarUsuario);
+        btnBiometrico = findViewById(R.id.btnBiometrico);
         txtMensajeLogin = findViewById(R.id.txtMensajeLogin);
 
         btnLogin.setOnClickListener(new View.OnClickListener() {
@@ -49,6 +58,14 @@ public class LoginActivity extends AppCompatActivity {
             @Override
             public void onClick(View v) {
                 registrarUsuario();
+            }
+        });
+
+        // Evento para activar el reconocimiento facial / huella
+        btnBiometrico.setOnClickListener(new View.OnClickListener() {
+            @Override
+            public void onClick(View v) {
+                autenticarBiometria();
             }
         });
     }
@@ -73,10 +90,7 @@ public class LoginActivity extends AppCompatActivity {
             cursor = db.query(UsuarioEntry.TABLE_NAME, null, selection, selectionArgs, null, null, null);
 
             if (cursor.moveToFirst()) {
-                Intent intent = new Intent(LoginActivity.this, MainActivity.class);
-                intent.putExtra("USUARIO_ACTUAL", user);
-                startActivity(intent);
-                finish();
+                accederSistema(user);
             } else {
                 txtMensajeLogin.setTextColor(Color.RED);
                 txtMensajeLogin.setText("Usuario o contraseña incorrectos");
@@ -124,6 +138,53 @@ public class LoginActivity extends AppCompatActivity {
         } finally {
             db.close();
         }
+    }
+
+    private void autenticarBiometria() {
+        BiometricManager biometricManager = BiometricManager.from(this);
+
+        int canAuthenticate = biometricManager.canAuthenticate(
+                BiometricManager.Authenticators.BIOMETRIC_STRONG | BiometricManager.Authenticators.DEVICE_CREDENTIAL);
+
+        if (canAuthenticate != BiometricManager.BIOMETRIC_SUCCESS) {
+            Toast.makeText(this, "Biometría no disponible o no configurada en el sistema", Toast.LENGTH_SHORT).show();
+            return;
+        }
+
+        Executor executor = ContextCompat.getMainExecutor(this);
+
+        BiometricPrompt biometricPrompt = new BiometricPrompt(LoginActivity.this, executor,
+                new BiometricPrompt.AuthenticationCallback() {
+                    @Override
+                    public void onAuthenticationSucceeded(@NonNull BiometricPrompt.AuthenticationResult result) {
+                        super.onAuthenticationSucceeded(result);
+                        Toast.makeText(LoginActivity.this, "¡Autenticación biométrica exitosa!", Toast.LENGTH_SHORT).show();
+                        accederSistema("operario_biometrico");
+                    }
+
+                    @Override
+                    public void onAuthenticationFailed() {
+                        super.onAuthenticationFailed();
+                        txtMensajeLogin.setTextColor(Color.RED);
+                        txtMensajeLogin.setText("Rostro o huella no reconocida");
+                    }
+                });
+
+        BiometricPrompt.PromptInfo promptInfo = new BiometricPrompt.PromptInfo.Builder()
+                .setTitle("Acceso Biométrico - Control Bodega")
+                .setSubtitle("Escanee su rostro o huella digital para iniciar turno")
+                .setAllowedAuthenticators(BiometricManager.Authenticators.BIOMETRIC_STRONG |
+                        BiometricManager.Authenticators.DEVICE_CREDENTIAL)
+                .build();
+
+        biometricPrompt.authenticate(promptInfo);
+    }
+
+    private void accederSistema(String nombreUsuario) {
+        Intent intent = new Intent(LoginActivity.this, MainActivity.class);
+        intent.putExtra("USUARIO_ACTUAL", nombreUsuario);
+        startActivity(intent);
+        finish();
     }
 
     @Override

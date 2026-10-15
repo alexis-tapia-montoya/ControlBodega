@@ -1,7 +1,11 @@
 package com.example.controlbodega;
 
+import androidx.activity.OnBackPressedCallback;
+import androidx.appcompat.app.AlertDialog;
 import androidx.appcompat.app.AppCompatActivity;
+
 import android.content.ContentValues;
+import android.content.Intent;
 import android.database.Cursor;
 import android.database.sqlite.SQLiteDatabase;
 import android.graphics.Color;
@@ -24,6 +28,7 @@ public class MainActivity extends AppCompatActivity {
     private EditText edtCantidad;
     private Button btnIngresar;
     private Button btnRetirar;
+    private Button btnCerrarSesion;
     private TextView txtMensaje;
     private TableLayout tableStock;
 
@@ -41,6 +46,7 @@ public class MainActivity extends AppCompatActivity {
         edtCantidad = findViewById(R.id.edtCantidad);
         btnIngresar = findViewById(R.id.btnIngresar);
         btnRetirar = findViewById(R.id.btnRetirar);
+        btnCerrarSesion = findViewById(R.id.btnCerrarSesion);
         txtMensaje = findViewById(R.id.txtMensaje);
         tableStock = findViewById(R.id.tableStock);
 
@@ -58,7 +64,36 @@ public class MainActivity extends AppCompatActivity {
             }
         });
 
+        btnCerrarSesion.setOnClickListener(new View.OnClickListener() {
+            @Override
+            public void onClick(View v) {
+                mostrarDialogoCerrarSesion();
+            }
+        });
+
+        getOnBackPressedDispatcher().addCallback(this, new OnBackPressedCallback(true) {
+            @Override
+            public void handleOnBackPressed() {
+                mostrarDialogoCerrarSesion();
+            }
+        });
+
         cargarProductosDesdeBD();
+    }
+
+    private void mostrarDialogoCerrarSesion() {
+        new AlertDialog.Builder(this)
+                .setTitle("Cerrar Sesión")
+                .setMessage("¿Estás seguro de que deseas salir del turno actual?")
+                .setPositiveButton("Sí, salir", (dialog, which) -> {
+                    // Redirigir a LoginActivity y limpiar la pila de actividades
+                    Intent intent = new Intent(MainActivity.this, LoginActivity.class);
+                    intent.addFlags(Intent.FLAG_ACTIVITY_CLEAR_TOP | Intent.FLAG_ACTIVITY_NEW_TASK | Intent.FLAG_ACTIVITY_CLEAR_TASK);
+                    startActivity(intent);
+                    finish();
+                })
+                .setNegativeButton("Cancelar", null)
+                .show();
     }
 
     private void gestionarStock(boolean esIngreso) {

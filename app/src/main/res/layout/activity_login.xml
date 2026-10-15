@@ -69,4 +69,13 @@
         android:layout_marginTop="12dp"
         android:textStyle="italic" />
 
+    <Button
+        android:id="@+id/btnBiometrico"
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content"
+        android:text="Ingresar con Reconocimiento Facial / Huella"
+        android:layout_marginTop="12dp"
+        android:backgroundTint="#00796B"
+        android:textColor="#FFFFFF" />
+
 </LinearLayout>
