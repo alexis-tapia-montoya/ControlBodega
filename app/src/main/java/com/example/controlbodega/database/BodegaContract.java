@@ -10,6 +10,7 @@ public final class BodegaContract {
         public static final String TABLE_NAME = "usuarios";
         public static final String COLUMN_USERNAME = "username";
         public static final String COLUMN_PASSWORD = "password";
+        public static final String COLUMN_FACE_DATA = "face_data";
     }
 
     public static class ProductoEntry implements BaseColumns {

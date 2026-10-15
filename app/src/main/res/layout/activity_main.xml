@@ -112,16 +112,17 @@
 
     </TableLayout>
 
-        <Button
+    <Button
         android:id="@+id/btnCerrarSesion"
         android:layout_width="match_parent"
         android:layout_height="wrap_content"
-        android:text="Cerrar Sesión"
+        android:layout_marginBottom="48dp"
         android:backgroundTint="#D32F2F"
+        android:text="Cerrar Sesión"
         android:textColor="#FFFFFF"
-        android:layout_marginBottom="16dp"
         app:layout_constraintBottom_toBottomOf="parent"
-        app:layout_constraintStart_toStartOf="parent"
-        app:layout_constraintEnd_toEndOf="parent" />
+        app:layout_constraintEnd_toEndOf="parent"
+        app:layout_constraintHorizontal_bias="0.0"
+        app:layout_constraintStart_toStartOf="parent" />
 
 </androidx.constraintlayout.widget.ConstraintLayout>
