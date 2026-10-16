@@ -18,4 +18,13 @@ public final class BodegaContract {
         public static final String COLUMN_NOMBRE = "nombre";
         public static final String COLUMN_CANTIDAD = "cantidad";
     }
+
+    public static class MovimientoEntry implements BaseColumns {
+        public static final String TABLE_NAME = "movimientos";
+        public static final String COLUMN_PRODUCTO = "producto";
+        public static final String COLUMN_TIPO = "tipo"; // "INGRESO" o "RETIRO"
+        public static final String COLUMN_CANTIDAD = "cantidad";
+        public static final String COLUMN_USUARIO = "usuario";
+        public static final String COLUMN_FECHA = "fecha";
+    }
 }

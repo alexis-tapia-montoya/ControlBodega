@@ -7,10 +7,11 @@ import android.database.sqlite.SQLiteOpenHelper;
 
 import com.example.controlbodega.database.BodegaContract.UsuarioEntry;
 import com.example.controlbodega.database.BodegaContract.ProductoEntry;
+import com.example.controlbodega.database.BodegaContract.MovimientoEntry;
 
 public class BodegaDbHelper extends SQLiteOpenHelper {
 
-    public static final int DATABASE_VERSION = 2;
+    public static final int DATABASE_VERSION = 3; // Subimos a versión 3
     public static final String DATABASE_NAME = "ControlBodega.db";
 
     private static final String SQL_CREATE_USUARIOS =
@@ -26,6 +27,15 @@ public class BodegaDbHelper extends SQLiteOpenHelper {
                     ProductoEntry.COLUMN_NOMBRE + " TEXT UNIQUE NOT NULL, " +
                     ProductoEntry.COLUMN_CANTIDAD + " INTEGER NOT NULL);";
 
+    private static final String SQL_CREATE_MOVIMIENTOS =
+            "CREATE TABLE " + MovimientoEntry.TABLE_NAME + " (" +
+                    MovimientoEntry._ID + " INTEGER PRIMARY KEY AUTOINCREMENT, " +
+                    MovimientoEntry.COLUMN_PRODUCTO + " TEXT NOT NULL, " +
+                    MovimientoEntry.COLUMN_TIPO + " TEXT NOT NULL, " +
+                    MovimientoEntry.COLUMN_CANTIDAD + " INTEGER NOT NULL, " +
+                    MovimientoEntry.COLUMN_USUARIO + " TEXT NOT NULL, " +
+                    MovimientoEntry.COLUMN_FECHA + " TIMESTAMP DEFAULT CURRENT_TIMESTAMP);";
+
     public BodegaDbHelper(Context context) {
         super(context, DATABASE_NAME, null, DATABASE_VERSION);
     }
@@ -34,6 +44,7 @@ public class BodegaDbHelper extends SQLiteOpenHelper {
     public void onCreate(SQLiteDatabase db) {
         db.execSQL(SQL_CREATE_USUARIOS);
         db.execSQL(SQL_CREATE_PRODUCTOS);
+        db.execSQL(SQL_CREATE_MOVIMIENTOS);
 
         insertarUsuario(db, "admin", "admin123", null);
         insertarUsuario(db, "operario1", "1234", null);
@@ -49,9 +60,9 @@ public class BodegaDbHelper extends SQLiteOpenHelper {
 
     @Override
     public void onUpgrade(SQLiteDatabase db, int oldVersion, int newVersion) {
-        // Al subir de versión 1 a 2, recrea las tablas con la nueva estructura
-        db.execSQL("DROP TABLE IF EXISTS " + UsuarioEntry.TABLE_NAME);
+        db.execSQL("DROP TABLE IF EXISTS " + MovimientoEntry.TABLE_NAME);
         db.execSQL("DROP TABLE IF EXISTS " + ProductoEntry.TABLE_NAME);
+        db.execSQL("DROP TABLE IF EXISTS " + UsuarioEntry.TABLE_NAME);
         onCreate(db);
     }
 }
