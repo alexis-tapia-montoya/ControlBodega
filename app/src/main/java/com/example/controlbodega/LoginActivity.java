@@ -63,7 +63,12 @@ public class LoginActivity extends AppCompatActivity {
 
     @Override
     protected void onCreate(Bundle savedInstanceState) {
+        getWindow().setFlags(
+                android.view.WindowManager.LayoutParams.FLAG_SECURE,
+                android.view.WindowManager.LayoutParams.FLAG_SECURE
+        );
         super.onCreate(savedInstanceState);
+        setContentView(R.layout.activity_login);
         setContentView(R.layout.activity_login);
 
         dbHelper = new BodegaDbHelper(this);

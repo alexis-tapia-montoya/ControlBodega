@@ -2,6 +2,7 @@ package com.example.controlbodega.database;
 
 import android.content.ContentValues;
 import android.content.Context;
+import android.database.Cursor;
 import android.database.sqlite.SQLiteDatabase;
 import android.database.sqlite.SQLiteOpenHelper;
 
@@ -11,7 +12,7 @@ import com.example.controlbodega.database.BodegaContract.MovimientoEntry;
 
 public class BodegaDbHelper extends SQLiteOpenHelper {
 
-    public static final int DATABASE_VERSION = 3; // Subimos a versión 3
+    public static final int DATABASE_VERSION = 3;
     public static final String DATABASE_NAME = "ControlBodega.db";
 
     private static final String SQL_CREATE_USUARIOS =
@@ -64,5 +65,51 @@ public class BodegaDbHelper extends SQLiteOpenHelper {
         db.execSQL("DROP TABLE IF EXISTS " + ProductoEntry.TABLE_NAME);
         db.execSQL("DROP TABLE IF EXISTS " + UsuarioEntry.TABLE_NAME);
         onCreate(db);
+    }
+
+    public long insertarOActualizarProducto(String nombre, int cantidad) {
+        SQLiteDatabase db = this.getWritableDatabase();
+        Cursor cursor = db.query(ProductoEntry.TABLE_NAME, null,
+                ProductoEntry.COLUMN_NOMBRE + " = ?", new String[]{nombre}, null, null, null);
+
+        long resultado;
+        if (cursor.moveToFirst()) {
+            int stockActual = cursor.getInt(cursor.getColumnIndexOrThrow(ProductoEntry.COLUMN_CANTIDAD));
+            ContentValues values = new ContentValues();
+            values.put(ProductoEntry.COLUMN_CANTIDAD, stockActual + cantidad);
+            resultado = db.update(ProductoEntry.TABLE_NAME, values,
+                    ProductoEntry.COLUMN_NOMBRE + " = ?", new String[]{nombre});
+        } else {
+            ContentValues values = new ContentValues();
+            values.put(ProductoEntry.COLUMN_NOMBRE, nombre);
+            values.put(ProductoEntry.COLUMN_CANTIDAD, cantidad);
+            resultado = db.insert(ProductoEntry.TABLE_NAME, null, values);
+        }
+        cursor.close();
+        return resultado;
+    }
+
+    public int actualizarStock(String nombre, int nuevoStock) {
+        SQLiteDatabase db = this.getWritableDatabase();
+        ContentValues values = new ContentValues();
+        values.put(ProductoEntry.COLUMN_CANTIDAD, nuevoStock);
+        return db.update(ProductoEntry.TABLE_NAME, values,
+                ProductoEntry.COLUMN_NOMBRE + " = ?", new String[]{nombre});
+    }
+
+    public int eliminarProducto(String nombre) {
+        SQLiteDatabase db = this.getWritableDatabase();
+        return db.delete(ProductoEntry.TABLE_NAME,
+                ProductoEntry.COLUMN_NOMBRE + " = ?", new String[]{nombre});
+    }
+
+    public long registrarMovimiento(String producto, String tipo, int cantidad, String usuario) {
+        SQLiteDatabase db = this.getWritableDatabase();
+        ContentValues values = new ContentValues();
+        values.put(MovimientoEntry.COLUMN_PRODUCTO, producto);
+        values.put(MovimientoEntry.COLUMN_TIPO, tipo);
+        values.put(MovimientoEntry.COLUMN_CANTIDAD, cantidad);
+        values.put(MovimientoEntry.COLUMN_USUARIO, usuario);
+        return db.insert(MovimientoEntry.TABLE_NAME, null, values);
     }
 }
