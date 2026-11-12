@@ -1,38 +1,116 @@
-#  ControlBodega - Sistema Móvil de Gestión de Inventario con Biometría Facial
+# ControlBodega - Sistema Móvil de Gestión de Inventario con Biometría Facial
 
 Aplicación móvil nativa desarrollada en **Android (Java)** diseñada para el control, auditoría y trazabilidad de entradas y salidas de stock en tiempo real. Incorpora un motor de autenticación biométrica facial sobre el dispositivo utilizando **CameraX** y **Google ML Kit**, almacenamiento relacional local con **SQLite**, trazabilidad de acciones por operario y control de navegación seguro.
 
 ---
 
-##  Características Principales
-
-* **Autenticación Dual:** Acceso tradicional por credenciales (usuario/contraseña) y acceso biométrico mediante reconocimiento facial nativo en tiempo real.
-* **Biometría Facial en el Dispositivo (On-Device):** Extracción de descriptores y puntos clave faciales (*landmarks*) mediante Google ML Kit y comparación basada en **distancia euclidiana**.
-* **Gestión de Stock en Tiempo Real:** Registro de altas, bajas y actualización automática de existencias con alertas visuales de inventario insuficiente.
-* **Auditoría y Trazabilidad:** Registro persistente de movimientos (`INGRESO` / `RETIRO`) asociando cantidad, marca de tiempo y el usuario en sesión responsable del cambio.
-* **Seguridad y Control de Sesión:** Cierre de turno protegido con confirmación modal (`AlertDialog`), limpieza de la pila de navegación (`Intent Flags`) e intercepción del botón/gesto Atrás del sistema (`OnBackPressedDispatcher`).
+## Ficha del Proyecto
+* **Nombre de la Aplicación:** ControlBodega
+* **Desarrollador:** Alexis Gabriel Tapia Montoya
+* **Asignatura:** Programación Android (IEI-093) — Evaluación Sumativa Actividad 2.5
+* **Institución:** Instituto Profesional Santo Tomás
+* **SDK Mínimo:** API 24 (Android 7.0 Nougat) / Target SDK 34
 
 ---
 
-## ️ Stack Tecnológico y Dependencias
+## Propósito y Características Principales
 
-* **Lenguaje:** Java 8+ / Android SDK
-* **Arquitectura de Persistencia:** SQLite (`SQLiteOpenHelper`, `BodegaContract`, versionado estructurado)
+**ControlBodega** resuelve la necesidad de controlar ingresos (`INGRESO`) y despachos (`RETIRO`) de mercadería en almacenes, asociando cada movimiento de forma inmutable al operario autenticado en turno sin depender de conexión a internet ni servidores externos.
+
+* **Autenticación Dual:** Acceso tradicional por credenciales (usuario/contraseña) y acceso biométrico mediante reconocimiento facial nativo en tiempo real.
+* **Biometría Facial en el Dispositivo (On-Device):** Extracción de descriptores y puntos clave faciales (*landmarks*) mediante Google ML Kit y comparación basada en **distancia euclidiana**.
+* **Gestión de Stock en Tiempo Real:** Registro de altas, bajas y actualización automática de existencias mediante tarjetas dinámicas (`RecyclerView` + `CardView`) con alertas visuales de inventario insuficiente.
+* **Auditoría y Trazabilidad:** Registro persistente de movimientos (`INGRESO` / `RETIRO`) asociando cantidad, marca de tiempo y el usuario en sesión responsable del cambio.
+* **Seguridad Integral y Control de Sesión:** Protección contra capturas de pantalla (`FLAG_SECURE`), cierre de turno con confirmación modal (`AlertDialog`), limpieza de la pila de navegación (`Intent Flags`) e intercepción del botón/gesto Atrás del sistema (`OnBackPressedDispatcher`).
+
+---
+
+## Stack Tecnológico y Dependencias
+
+* **Lenguaje:** Java 17 / Android SDK
+* **Arquitectura de Persistencia:** SQLite (`SQLiteOpenHelper`, `BodegaContract`, versionado estructurado v3)
 * **Visión Artificial y Cámara:**
     * `androidx.camera:camera-camera2:1.3.1` (CameraX)
     * `androidx.camera:camera-lifecycle:1.3.1`
     * `androidx.camera:camera-view:1.3.1`
     * `com.google.mlkit:face-detection:16.1.6` (Google ML Kit Face Detection)
-* **Concurrencia:** `ExecutorService` en segundo plano para evitar bloqueos del hilo principal (prevención de errores *ANR*).
-* **Diseño UI:** `TableLayout`, `TableRow` dinámicos, `ScrollView` y componentes Material.
+* **Concurrencia:** `ExecutorService` y `Handler(Looper.getMainLooper())` en segundo plano para evitar bloqueos del hilo principal (prevención de errores *ANR*).
+* **Diseño UI:** `ConstraintLayout`, `RecyclerView`, `CardView` y componentes Material.
 
 ---
 
-##  Estructura de la Base de Datos (SQLite)
+## Diagrama de Flujo de Actividades (UI Flow & Intents)
 
-La persistencia local se gestiona a través de `BodegaDbHelper.java`:
+```mermaid
+graph TD
+    A([Inicio de App]) --> B[LoginActivity: FLAG_SECURE]
+    
+    subgraph LoginActivity [Autenticación y Registro]
+        B --> C{Método de Acceso}
+        C -->|Credenciales| D[Consulta Parametrizada SQLite]
+        C -->|Biometría Facial| E[CameraX + ML Kit Face Detection]
+        E --> F[Normalización de Landmarks]
+        F --> G{Distancia Euclidiana <= 0.22}
+        C -->|Rol Administrador| H[Crear Usuario / Registrar Vector Facial]
+        H -->|INSERT / UPDATE| I[(SQLite: ControlBodega.db)]
+    end
 
-### 1. Tabla `usuarios`
+    D -->|Válido| J[Intent + Extra: USUARIO_ACTUAL]
+    G -->|Rostro Coincide| J
+    D -->|Error| B
+    G -->|No Coincide| B
+
+    J --> K[MainActivity: FLAG_SECURE]
+
+    subgraph MainActivity [Gestión de Inventario y Auditoría]
+        K --> L[Carga Asíncrona ExecutorService]
+        L --> M[Renderizado en RecyclerView + CardView]
+        K --> N[Operación: Ingreso / Retiro]
+        N -->|Transacción Segura| I
+        K --> O[Cerrar Sesión / OnBackPressed]
+        O --> P{Confirmar AlertDialog}
+        P -->|Sí| Q[Intent + FLAG_ACTIVITY_CLEAR_TOP]
+        P -->|No| K
+    end
+
+    Q --> B
+```
+
+---
+
+## Modelo Entidad-Relación de Base de Datos (ERD)
+
+```mermaid
+erDiagram
+    USUARIOS {
+        INTEGER _id PK "AUTOINCREMENT"
+        TEXT username UK "NOT NULL"
+        TEXT password "NOT NULL"
+        TEXT face_data "Vector normalizado"
+    }
+
+    PRODUCTOS {
+        INTEGER _id PK "AUTOINCREMENT"
+        TEXT nombre UK "NOT NULL"
+        INTEGER cantidad "NOT NULL"
+    }
+
+    MOVIMIENTOS {
+        INTEGER _id PK "AUTOINCREMENT"
+        TEXT producto "NOT NULL"
+        TEXT tipo "INGRESO | RETIRO"
+        INTEGER cantidad "NOT NULL"
+        TEXT usuario "NOT NULL"
+        TIMESTAMP fecha "DEFAULT CURRENT_TIMESTAMP"
+    }
+
+    USUARIOS ||--o{ MOVIMIENTOS : "audita / registra"
+    PRODUCTOS ||--o{ MOVIMIENTOS : "historial de stock"
+```
+
+### Detalle de Tablas (`BodegaContract` / `BodegaDbHelper`)
+
+#### 1. Tabla `usuarios`
 | Campo | Tipo | Restricción / Propósito |
 | :--- | :--- | :--- |
 | `_id` | `INTEGER` | Clave primaria autoincremental |
@@ -40,14 +118,14 @@ La persistencia local se gestiona a través de `BodegaDbHelper.java`:
 | `password` | `TEXT` | Contraseña del operario (Not Null) |
 | `face_data` | `TEXT` | Vector numérico normalizado de características faciales |
 
-### 2. Tabla `productos`
+#### 2. Tabla `productos`
 | Campo | Tipo | Restricción / Propósito |
 | :--- | :--- | :--- |
 | `_id` | `INTEGER` | Clave primaria autoincremental |
 | `nombre` | `TEXT` | Nombre del artículo (Único, Not Null) |
 | `cantidad` | `INTEGER` | Unidades disponibles en bodega (Not Null) |
 
-### 3. Tabla `movimientos` (Auditoría)
+#### 3. Tabla `movimientos` (Auditoría)
 | Campo | Tipo | Restricción / Propósito |
 | :--- | :--- | :--- |
 | `_id` | `INTEGER` | Clave primaria autoincremental |
@@ -59,7 +137,7 @@ La persistencia local se gestiona a través de `BodegaDbHelper.java`:
 
 ---
 
-##  ¿Cómo Funciona el Reconocimiento Facial?
+## ¿Cómo Funciona el Reconocimiento Facial?
 
 El flujo biométrico no sube imágenes a la nube ni almacena fotos directas del usuario; opera 100% de manera local:
 
@@ -77,14 +155,38 @@ El flujo biométrico no sube imágenes a la nube ni almacena fotos directas del 
 
 ---
 
-##  Guía de Uso de la Aplicación
+## Auditoría de Seguridad Implementada
+
+| Componente | Riesgo Mitigado | Implementación Técnica |
+| :--- | :--- | :--- |
+| **SQLite (`BodegaDbHelper`)** | Inyección SQL (`SQLi`) | Uso estricto de consultas parametrizadas (`?` con `selectionArgs`) y `ContentValues`. Cero concatenación de strings. |
+| **Manifiesto (`AndroidManifest.xml`)** | Exposición de Componentes y Privilegios | `MainActivity` protegida con `android:exported="false"`. Principio de menor privilegio declarando únicamente `android.permission.CAMERA`. |
+| **Pantallas Sensibles** | Capturas de pantalla y espionaje en multitarea | Implementación de `WindowManager.LayoutParams.FLAG_SECURE` en `LoginActivity` y `MainActivity`. |
+| **Cámara y Archivos** | `FileUriExposedException` (`file://`) | Procesamiento de fotogramas directamente en memoria mediante `CameraX ImageAnalysis` y ML Kit, eliminando la necesidad de exponer rutas de archivos externos. |
+| **Ciclo de Vida y Sesión** | Acceso no autorizado tras cierre de sesión | Limpieza de pila de actividades mediante `FLAG_ACTIVITY_CLEAR_TOP` y `FLAG_ACTIVITY_CLEAR_TASK`, e interceptación de botón atrás con `OnBackPressedDispatcher`. |
+
+---
+
+## Guía de Instalación y Ejecución
+
+1. Clonar el repositorio:
+   ```bash
+   git clone [https://github.com/alexis-tapia-montoya/ControlBodega.git](https://github.com/alexis-tapia-montoya/ControlBodega.git)
+   ```
+2. Abrir el proyecto en **Android Studio** (Ladybug o superior).
+3. Sincronizar dependencias de Gradle (**File -> Sync Project with Gradle Files**).
+4. Ejecutar en un dispositivo físico Android (API 24+) con cámara frontal operativa y conceder el permiso de cámara al iniciar.
+
+---
+
+## Guía de Uso de la Aplicación
 
 ### 1. Primer Inicio y Registro de Operarios (Solo Admin)
-1. Inicie la aplicación.
+1. Inicie la aplicación (usuarios por defecto: `admin` / `admin123` y `operario1` / `1234`).
 2. En la sección **Gestión de Operarios (Solo Admin)**:
     * Ingrese el **Usuario** y **Contraseña** a crear.
     * Ingrese la clave maestra de administrador (`admin123`).
-    * Presione **1. Registrar Usuario**.
+    * Presione **Registrar Usuario**.
 3. Para asociar el rostro:
     * Mantenga el nombre de usuario y la clave de administrador ingresados.
     * Presione **2. Escanear y Asociar Rostro**.
@@ -95,17 +197,18 @@ El flujo biométrico no sube imágenes a la nube ni almacena fotos directas del 
 * **Método 2 (Credenciales):** Ingrese usuario y contraseña manuales y presione **Iniciar Sesión**.
 
 ### 3. Operación de Bodega
-* **Ingresar Stock:** Escriba el producto, la cantidad y presione **Ingresar**. Si el producto no existía, se crea automáticamente; si ya existía, suma existencias.
-* **Retirar Stock:** Seleccione un producto de la tabla (se autorrellenará en el formulario), escriba la cantidad a despachar y presione **Retirar**. Si no hay suficiente stock, el sistema alertará del error.
-* **Tabla en Vivo:** La tabla detalla el producto, el stock actual, el último movimiento registrado (`+X` en verde o `-X` en rojo) y el usuario responsable.
+* **Ingresar Stock:** Escriba el producto, la cantidad y presione **Ingresar (+)**. Si el producto no existía, se crea automáticamente; si ya existía, suma existencias.
+* **Retirar Stock:** Toque una tarjeta de producto de la lista (se autorrellenará en el formulario), escriba la cantidad a despachar y presione **Retirar (-)**. Si no hay suficiente stock, el sistema alertará del error.
+* **Lista en Vivo (`RecyclerView` + `CardView`):** Cada tarjeta detalla el producto, el stock actual, el último movimiento registrado (`+X` en verde o `-X` en rojo) y el usuario responsable.
 
 ### 4. Cierre de Turno
 * Al presionar **Cerrar Sesión** o presionar la flecha/gesto **Atrás** del teléfono, se despliega un diálogo de confirmación. Al aceptar, se destruye la sesión y se limpian las banderas de la pila para impedir retornos no autorizados.
 
 ---
 
-##  Permisos Requeridos (`AndroidManifest.xml`)
+## Permisos Requeridos (`AndroidManifest.xml`)
 
 ```xml
 <uses-permission android:name="android.permission.CAMERA" />
 <uses-feature android:name="android.hardware.camera" android:required="false" />
+```
