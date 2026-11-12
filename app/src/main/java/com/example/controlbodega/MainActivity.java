@@ -3,6 +3,8 @@ package com.example.controlbodega;
 import androidx.activity.OnBackPressedCallback;
 import androidx.appcompat.app.AlertDialog;
 import androidx.appcompat.app.AppCompatActivity;
+import androidx.recyclerview.widget.LinearLayoutManager;
+import androidx.recyclerview.widget.RecyclerView;
 
 import android.content.Intent;
 import android.database.Cursor;
@@ -11,13 +13,9 @@ import android.graphics.Color;
 import android.os.Bundle;
 import android.os.Handler;
 import android.os.Looper;
-import android.view.Gravity;
-import android.view.View;
 import android.view.WindowManager;
 import android.widget.Button;
 import android.widget.EditText;
-import android.widget.TableLayout;
-import android.widget.TableRow;
 import android.widget.TextView;
 import android.widget.Toast;
 
@@ -38,28 +36,13 @@ public class MainActivity extends AppCompatActivity {
     private Button btnRetirar;
     private Button btnCerrarSesion;
     private TextView txtMensaje;
-    private TableLayout tableStock;
+    private RecyclerView rvProductos;
 
     private BodegaDbHelper dbHelper;
-    private TableRow filaSeleccionadaAnterior = null;
     private String usuarioSesion = "Desconocido";
 
     private ExecutorService dbExecutor;
     private Handler mainHandler;
-
-    private static class FilaProductoData {
-        String nombre;
-        int cantidad;
-        String ultimoMovimiento;
-        String responsable;
-
-        FilaProductoData(String nombre, int cantidad, String ultimoMovimiento, String responsable) {
-            this.nombre = nombre;
-            this.cantidad = cantidad;
-            this.ultimoMovimiento = ultimoMovimiento;
-            this.responsable = responsable;
-        }
-    }
 
     @Override
     protected void onCreate(Bundle savedInstanceState) {
@@ -84,7 +67,8 @@ public class MainActivity extends AppCompatActivity {
         btnRetirar = findViewById(R.id.btnRetirar);
         btnCerrarSesion = findViewById(R.id.btnCerrarSesion);
         txtMensaje = findViewById(R.id.txtMensaje);
-        tableStock = findViewById(R.id.tableStock);
+        rvProductos = findViewById(R.id.rvProductos);
+        rvProductos.setLayoutManager(new LinearLayoutManager(this));
 
         btnIngresar.setOnClickListener(v -> gestionarStock(true));
         btnRetirar.setOnClickListener(v -> gestionarStock(false));
@@ -205,7 +189,7 @@ public class MainActivity extends AppCompatActivity {
 
     private void cargarProductosDesdeBD() {
         dbExecutor.execute(() -> {
-            List<FilaProductoData> lista = new ArrayList<>();
+            List<ProductoAdapter.ProductoModelo> lista = new ArrayList<>();
             SQLiteDatabase db = dbHelper.getReadableDatabase();
             Cursor cursor = null;
 
@@ -237,81 +221,21 @@ public class MainActivity extends AppCompatActivity {
                     }
                     cursorMov.close();
 
-                    lista.add(new FilaProductoData(nombreProd, cantidad, ultimoMovimientoTexto, usuarioResponsable));
+                    lista.add(new ProductoAdapter.ProductoModelo(nombreProd, cantidad, ultimoMovimientoTexto, usuarioResponsable));
                 }
             } finally {
                 if (cursor != null) cursor.close();
             }
 
             mainHandler.post(() -> {
-                int totalFilas = tableStock.getChildCount();
-                if (totalFilas > 1) {
-                    tableStock.removeViews(1, totalFilas - 1);
-                }
-                filaSeleccionadaAnterior = null;
-
-                for (FilaProductoData item : lista) {
-                    final TableRow fila = new TableRow(this);
-                    fila.setPadding(0, 12, 0, 12);
-                    fila.setClickable(true);
-                    fila.setFocusable(true);
-
-                    TextView colProducto = new TextView(this);
-                    colProducto.setText(item.nombre);
-                    colProducto.setTextSize(13);
-                    colProducto.setGravity(Gravity.CENTER);
-                    colProducto.setPadding(4, 4, 4, 4);
-
-                    TextView colCantidad = new TextView(this);
-                    colCantidad.setText(String.valueOf(item.cantidad));
-                    colCantidad.setTextSize(13);
-                    colCantidad.setGravity(Gravity.CENTER);
-                    colCantidad.setPadding(4, 4, 4, 4);
-
-                    TextView colUltMov = new TextView(this);
-                    colUltMov.setText(item.ultimoMovimiento);
-                    colUltMov.setTextSize(13);
-                    colUltMov.setGravity(Gravity.CENTER);
-                    colUltMov.setPadding(4, 4, 4, 4);
-                    if (item.ultimoMovimiento.startsWith("+")) {
-                        colUltMov.setTextColor(Color.parseColor("#388E3C"));
-                    } else if (item.ultimoMovimiento.startsWith("-")) {
-                        colUltMov.setTextColor(Color.parseColor("#D32F2F"));
-                    }
-
-                    TextView colUsuario = new TextView(this);
-                    colUsuario.setText(item.responsable);
-                    colUsuario.setTextSize(13);
-                    colUsuario.setGravity(Gravity.CENTER);
-                    colUsuario.setPadding(4, 4, 4, 4);
-
-                    View.OnClickListener clickListener = v -> {
-                        if (filaSeleccionadaAnterior != null) {
-                            filaSeleccionadaAnterior.setBackgroundColor(Color.TRANSPARENT);
-                        }
-                        fila.setBackgroundColor(Color.parseColor("#BBDEFB"));
-                        filaSeleccionadaAnterior = fila;
-
-                        edtProducto.setText(item.nombre);
-                        edtCantidad.requestFocus();
-
-                        Toast.makeText(MainActivity.this, "Seleccionado: " + item.nombre, Toast.LENGTH_SHORT).show();
-                        txtMensaje.setTextColor(Color.parseColor("#1976D2"));
-                        txtMensaje.setText("Producto: " + item.nombre + " | Último cambio por: @" + item.responsable);
-                    };
-
-                    fila.setOnClickListener(clickListener);
-                    colProducto.setOnClickListener(clickListener);
-                    colCantidad.setOnClickListener(clickListener);
-                    colUltMov.setOnClickListener(clickListener);
-                    colUsuario.setOnClickListener(clickListener);
-
-                    fila.addView(colProducto);
-                    fila.addView(colCantidad);
-                    fila.addView(colUltMov);
-                    fila.addView(colUsuario);
-                    tableStock.addView(fila);
-                }
+                ProductoAdapter adapter = new ProductoAdapter(lista, productoSeleccionado -> {
+                    edtProducto.setText(productoSeleccionado.nombre);
+                    edtCantidad.requestFocus();
+                    Toast.makeText(MainActivity.this, "Seleccionado: " + productoSeleccionado.nombre, Toast.LENGTH_SHORT).show();
+                    txtMensaje.setTextColor(Color.parseColor("#1976D2"));
+                    txtMensaje.setText("Producto: " + productoSeleccionado.nombre + " (Stock actual: " + productoSeleccionado.stock + ")");
+                });
+                rvProductos.setAdapter(adapter);
             });
         });
     }
