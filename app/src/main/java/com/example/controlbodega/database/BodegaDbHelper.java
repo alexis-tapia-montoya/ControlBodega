@@ -3,6 +3,7 @@ package com.example.controlbodega.database;
 import android.content.ContentValues;
 import android.content.Context;
 import android.database.Cursor;
+import android.database.SQLException;
 import android.database.sqlite.SQLiteDatabase;
 import android.database.sqlite.SQLiteOpenHelper;
 
@@ -37,12 +38,19 @@ public class BodegaDbHelper extends SQLiteOpenHelper {
                     MovimientoEntry.COLUMN_USUARIO + " TEXT NOT NULL, " +
                     MovimientoEntry.COLUMN_FECHA + " TIMESTAMP DEFAULT CURRENT_TIMESTAMP);";
 
+    /**
+     * @param context Contexto de la aplicación o actividad.
+     */
     public BodegaDbHelper(Context context) {
         super(context, DATABASE_NAME, null, DATABASE_VERSION);
     }
 
+    /**
+     * @param db Instancia de la base de datos SQLite recién creada.
+     * @throws SQLException Si ocurre un error al ejecutar las sentencias CREATE TABLE.
+     */
     @Override
-    public void onCreate(SQLiteDatabase db) {
+    public void onCreate(SQLiteDatabase db) throws SQLException {
         db.execSQL(SQL_CREATE_USUARIOS);
         db.execSQL(SQL_CREATE_PRODUCTOS);
         db.execSQL(SQL_CREATE_MOVIMIENTOS);
@@ -51,6 +59,12 @@ public class BodegaDbHelper extends SQLiteOpenHelper {
         insertarUsuario(db, "operario1", "1234", null);
     }
 
+    /**
+     * @param db Instancia en modo escritura de SQLiteDatabase.
+     * @param user Nombre de usuario único.
+     * @param pass Contraseña del operario.
+     * @param faceData Vector facial normalizado.
+     */
     private void insertarUsuario(SQLiteDatabase db, String user, String pass, String faceData) {
         ContentValues values = new ContentValues();
         values.put(UsuarioEntry.COLUMN_USERNAME, user);
@@ -59,6 +73,11 @@ public class BodegaDbHelper extends SQLiteOpenHelper {
         db.insert(UsuarioEntry.TABLE_NAME, null, values);
     }
 
+    /**
+     * @param db Instancia de la base de datos SQLite.
+     * @param oldVersion Versión anterior de la base de datos.
+     * @param newVersion Versión nueva de la base de datos.
+     */
     @Override
     public void onUpgrade(SQLiteDatabase db, int oldVersion, int newVersion) {
         db.execSQL("DROP TABLE IF EXISTS " + MovimientoEntry.TABLE_NAME);
@@ -67,7 +86,13 @@ public class BodegaDbHelper extends SQLiteOpenHelper {
         onCreate(db);
     }
 
-    public long insertarOActualizarProducto(String nombre, int cantidad) {
+    /**
+     * @param nombre Nombre único del producto.
+     * @param cantidad Cantidad de unidades a registrar o sumar.
+     * @return ID de la fila insertada o número de filas modificadas.
+     * @throws IllegalArgumentException Si la columna solicitada no existe en el Cursor.
+     */
+    public long insertarOActualizarProducto(String nombre, int cantidad) throws IllegalArgumentException {
         SQLiteDatabase db = this.getWritableDatabase();
         Cursor cursor = db.query(ProductoEntry.TABLE_NAME, null,
                 ProductoEntry.COLUMN_NOMBRE + " = ?", new String[]{nombre}, null, null, null);
@@ -89,6 +114,11 @@ public class BodegaDbHelper extends SQLiteOpenHelper {
         return resultado;
     }
 
+    /**
+     * @param nombre Nombre exacto del producto.
+     * @param nuevoStock Nueva cantidad total disponible en inventario.
+     * @return Número de filas actualizadas.
+     */
     public int actualizarStock(String nombre, int nuevoStock) {
         SQLiteDatabase db = this.getWritableDatabase();
         ContentValues values = new ContentValues();
@@ -97,12 +127,23 @@ public class BodegaDbHelper extends SQLiteOpenHelper {
                 ProductoEntry.COLUMN_NOMBRE + " = ?", new String[]{nombre});
     }
 
+    /**
+     * @param nombre Nombre del producto a eliminar.
+     * @return Número de filas eliminadas.
+     */
     public int eliminarProducto(String nombre) {
         SQLiteDatabase db = this.getWritableDatabase();
         return db.delete(ProductoEntry.TABLE_NAME,
                 ProductoEntry.COLUMN_NOMBRE + " = ?", new String[]{nombre});
     }
 
+    /**
+     * @param producto Nombre del producto afectado.
+     * @param tipo Tipo de movimiento ("INGRESO" o "RETIRO").
+     * @param cantidad Cantidad de unidades movilizadas.
+     * @param usuario Nombre del operario autenticado.
+     * @return ID del nuevo registro de auditoría insertado.
+     */
     public long registrarMovimiento(String producto, String tipo, int cantidad, String usuario) {
         SQLiteDatabase db = this.getWritableDatabase();
         ContentValues values = new ContentValues();
