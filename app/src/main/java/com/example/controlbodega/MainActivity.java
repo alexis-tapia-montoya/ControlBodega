@@ -28,6 +28,11 @@ import java.util.List;
 import java.util.concurrent.ExecutorService;
 import java.util.concurrent.Executors;
 
+/**
+ * Actividad principal de gestión y auditoría de inventario de ControlBodega.
+ * Permite registrar ingresos y retiros de stock de forma asíncrona sobre SQLite,
+ * visualizar existencias en un RecyclerView y gestionar el cierre seguro de sesión.
+ */
 public class MainActivity extends AppCompatActivity {
 
     private EditText edtProducto;
@@ -44,6 +49,12 @@ public class MainActivity extends AppCompatActivity {
     private ExecutorService dbExecutor;
     private Handler mainHandler;
 
+    /**
+     * Inicializa la interfaz de bodega, aplica protección contra capturas (FLAG_SECURE),
+     * recupera el operario autenticado y configura la navegación segura.
+     *
+     * @param savedInstanceState Estado previo guardado de la actividad si fue recreada.
+     */
     @Override
     protected void onCreate(Bundle savedInstanceState) {
         getWindow().setFlags(
@@ -84,6 +95,10 @@ public class MainActivity extends AppCompatActivity {
         cargarProductosDesdeBD();
     }
 
+    /**
+     * Despliega un cuadro de confirmación antes de finalizar el turno actual
+     * y limpia la pila de actividades al redirigir al inicio de sesión.
+     */
     private void mostrarDialogoCerrarSesion() {
         new AlertDialog.Builder(this)
                 .setTitle("Cerrar Sesión")
@@ -98,7 +113,14 @@ public class MainActivity extends AppCompatActivity {
                 .show();
     }
 
-    private void gestionarStock(boolean esIngreso) {
+    /**
+     * Valida los datos del formulario y ejecuta en segundo plano el ingreso o retiro
+     * de inventario en SQLite, registrando la trazabilidad asociada al operario en sesión.
+     *
+     * @param esIngreso true para incrementar el stock del producto; false para descontar existencias.
+     * @throws NumberFormatException Si el texto ingresado en cantidad no representa un entero válido.
+     */
+    private void gestionarStock(boolean esIngreso) throws NumberFormatException {
         String producto = edtProducto.getText().toString().trim();
         String cantidadStr = edtCantidad.getText().toString().trim();
 
@@ -187,6 +209,10 @@ public class MainActivity extends AppCompatActivity {
         });
     }
 
+    /**
+     * Consulta los productos y su último movimiento en SQLite mediante ExecutorService
+     * y actualiza el RecyclerView en el hilo principal sin bloquear la interfaz.
+     */
     private void cargarProductosDesdeBD() {
         dbExecutor.execute(() -> {
             List<ProductoAdapter.ProductoModelo> lista = new ArrayList<>();
@@ -240,6 +266,10 @@ public class MainActivity extends AppCompatActivity {
         });
     }
 
+    /**
+     * Libera los hilos de ejecución en segundo plano y cierra la conexión a SQLite
+     * al destruir la actividad.
+     */
     @Override
     protected void onDestroy() {
         if (dbExecutor != null) {

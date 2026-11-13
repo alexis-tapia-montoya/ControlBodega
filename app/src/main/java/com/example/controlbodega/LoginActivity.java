@@ -43,6 +43,11 @@ import java.util.concurrent.ExecutionException;
 import java.util.concurrent.ExecutorService;
 import java.util.concurrent.Executors;
 
+/**
+ * Actividad de autenticación y gestión de operarios de ControlBodega.
+ * Soporta acceso tradicional mediante credenciales en SQLite y reconocimiento facial
+ * local en tiempo real utilizando CameraX y Google ML Kit Face Detection.
+ */
 public class LoginActivity extends AppCompatActivity {
 
     private EditText edtUsuario, edtClave, edtClaveAdmin;
@@ -61,6 +66,12 @@ public class LoginActivity extends AppCompatActivity {
     private boolean procesoCompletado = false;
     private String usuarioParaRegistrarRostro = "";
 
+    /**
+     * Inicializa la vista de inicio de sesión, aplica FLAG_SECURE para proteger credenciales
+     * y configura los escuchadores para autenticación manual, biométrica y alta de operarios.
+     *
+     * @param savedInstanceState Estado previo guardado de la actividad si fue recreada.
+     */
     @Override
     protected void onCreate(Bundle savedInstanceState) {
         getWindow().setFlags(
@@ -68,7 +79,6 @@ public class LoginActivity extends AppCompatActivity {
                 android.view.WindowManager.LayoutParams.FLAG_SECURE
         );
         super.onCreate(savedInstanceState);
-        setContentView(R.layout.activity_login);
         setContentView(R.layout.activity_login);
 
         dbHelper = new BodegaDbHelper(this);
@@ -113,6 +123,9 @@ public class LoginActivity extends AppCompatActivity {
         });
     }
 
+    /**
+     * Comprueba si el permiso de cámara está concedido o lo solicita en tiempo de ejecución.
+     */
     private void verificarPermisosYCamara() {
         if (ContextCompat.checkSelfPermission(this, Manifest.permission.CAMERA) == PackageManager.PERMISSION_GRANTED) {
             iniciarCamaraFacial();
@@ -121,6 +134,10 @@ public class LoginActivity extends AppCompatActivity {
         }
     }
 
+    /**
+     * Inicializa el flujo de cámara frontal con CameraX y enlaza el analizador de fotogramas
+     * con Google ML Kit para extraer puntos clave faciales sin almacenar archivos en disco.
+     */
     private void iniciarCamaraFacial() {
         previewCamara.setVisibility(View.VISIBLE);
         procesoCompletado = false;
@@ -191,6 +208,13 @@ public class LoginActivity extends AppCompatActivity {
         }, ContextCompat.getMainExecutor(this));
     }
 
+    /**
+     * Calcula un vector normalizado de 8 coordenadas a partir de los rasgos clave del rostro
+     * (ojos, nariz y boca) relativos a su caja delimitadora.
+     *
+     * @param face Objeto Face detectado por ML Kit.
+     * @return Cadena separada por comas con las coordenadas normalizadas, o null si faltan rasgos.
+     */
     private String extraerVectorFacial(Face face) {
         Rect bounds = face.getBoundingBox();
         float width = Math.max(1f, (float) bounds.width());
@@ -220,6 +244,12 @@ public class LoginActivity extends AppCompatActivity {
         return x1 + "," + y1 + "," + x2 + "," + y2 + "," + x3 + "," + y3 + "," + x4 + "," + y4;
     }
 
+    /**
+     * Actualiza de forma parametrizada el vector biométrico facial asociado a un usuario en SQLite.
+     *
+     * @param usuario      Nombre del operario registrado previamente.
+     * @param vectorFacial Descriptor facial serializado en texto.
+     */
     private void guardarRostroEnBD(String usuario, String vectorFacial) {
         SQLiteDatabase db = dbHelper.getWritableDatabase();
         ContentValues values = new ContentValues();
@@ -239,6 +269,12 @@ public class LoginActivity extends AppCompatActivity {
         }
     }
 
+    /**
+     * Compara el vector facial capturado contra los registros almacenados en SQLite mediante
+     * distancia euclidiana y concede acceso si supera el umbral de tolerancia.
+     *
+     * @param vectorActualStr Vector facial capturado en tiempo real.
+     */
     private void identificarYAcceder(String vectorActualStr) {
         SQLiteDatabase db = dbHelper.getReadableDatabase();
         Cursor cursor = null;
@@ -295,7 +331,14 @@ public class LoginActivity extends AppCompatActivity {
         accederSistema(usuarioIdentificado);
     }
 
-    private float[] parsearVector(String str) {
+    /**
+     * Convierte una cadena serializada de coordenadas separadas por comas en un arreglo flotante.
+     *
+     * @param str Cadena numérica separada por comas.
+     * @return Arreglo de valores float correspondiente al vector facial.
+     * @throws NumberFormatException Si alguno de los segmentos no puede convertirse a float.
+     */
+    private float[] parsearVector(String str) throws NumberFormatException {
         String[] partes = str.split(",");
         float[] v = new float[partes.length];
         for (int i = 0; i < partes.length; i++) {
@@ -304,6 +347,13 @@ public class LoginActivity extends AppCompatActivity {
         return v;
     }
 
+    /**
+     * Calcula la distancia euclidiana entre dos vectores de características faciales.
+     *
+     * @param v1 Vector facial capturado actualmente.
+     * @param v2 Vector facial almacenado en base de datos.
+     * @return Distancia escalar entre ambos vectores (menor valor indica mayor similitud).
+     */
     private double calcularDistanciaEuclidiana(float[] v1, float[] v2) {
         double suma = 0;
         for (int i = 0; i < Math.min(v1.length, v2.length); i++) {
@@ -313,6 +363,9 @@ public class LoginActivity extends AppCompatActivity {
         return Math.sqrt(suma);
     }
 
+    /**
+     * Desvincula los casos de uso de CameraX y oculta la vista previa de la cámara.
+     */
     private void apagarCamara() {
         if (cameraProvider != null) {
             cameraProvider.unbindAll();
@@ -322,6 +375,9 @@ public class LoginActivity extends AppCompatActivity {
         }
     }
 
+    /**
+     * Valida las credenciales ingresadas contra SQLite mediante consulta parametrizada.
+     */
     private void iniciarSesion() {
         String user = edtUsuario.getText().toString().trim();
         String pass = edtClave.getText().toString().trim();
@@ -353,6 +409,9 @@ public class LoginActivity extends AppCompatActivity {
         }
     }
 
+    /**
+     * Registra un nuevo operario en SQLite previa verificación de la clave maestra de administrador.
+     */
     private void registrarUsuario() {
         String nuevoUser = edtUsuario.getText().toString().trim();
         String nuevaPass = edtClave.getText().toString().trim();
@@ -392,6 +451,11 @@ public class LoginActivity extends AppCompatActivity {
         }
     }
 
+    /**
+     * Inicia MainActivity transfiriendo el nombre del operario autenticado mediante Intent Extra.
+     *
+     * @param nombreUsuario Identificador del usuario que inicia turno.
+     */
     private void accederSistema(String nombreUsuario) {
         apagarCamara();
         Intent intent = new Intent(LoginActivity.this, MainActivity.class);
@@ -400,6 +464,13 @@ public class LoginActivity extends AppCompatActivity {
         finish();
     }
 
+    /**
+     * Procesa la respuesta del usuario ante la solicitud de permisos de cámara.
+     *
+     * @param requestCode  Código identificador de la solicitud de permiso.
+     * @param permissions  Arreglo de permisos solicitados.
+     * @param grantResults Resultados de concesión correspondientes.
+     */
     @Override
     public void onRequestPermissionsResult(int requestCode, @NonNull String[] permissions, @NonNull int[] grantResults) {
         super.onRequestPermissionsResult(requestCode, permissions, grantResults);
@@ -410,6 +481,9 @@ public class LoginActivity extends AppCompatActivity {
         }
     }
 
+    /**
+     * Detiene la cámara, apaga el ejecutor de análisis facial y cierra la base de datos al destruir la vista.
+     */
     @Override
     protected void onDestroy() {
         apagarCamara();
